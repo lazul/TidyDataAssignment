@@ -1,0 +1,151 @@
+NamingColumns <- function(FiletoLable){
+  
+  ## Reading Column Names from features.txt
+  columnNames <- read.table("features.txt")
+  
+  
+  ## Read data file to be labled (from test or train files)
+  dataFile <- read.table(FiletoLable)
+  
+  ## iter over columns and rename with descriptive colNames in file "features.txt"
+  for (iter in 1:561){
+    lbl <- as.character(columnNames[iter,2])
+    names(dataFile)[iter] <- lbl
+    
+  }
+  
+  ## return labled DF
+  return (dataFile)
+}
+
+
+SAIndex <- function(subjFile,actFile){
+  
+  ## reading in Subject key and Activity Key files
+  Subject <- read.table(subjFile)
+  Activity <- read.table(actFile)
+  
+  ## renames Subject and Activity Columns in respective files
+  Subject <- rename(Subject, Subject = V1)
+  Activity <- rename(Activity, Activity = V1)
+  
+  ### introduce an index to merge them by and merging
+  rows <- nrow(Subject)
+  Subject[,"Index"] <- (1:rows)
+  rows <- nrow(Activity)
+  Activity[,"Index"] <- (1:rows)
+  
+  ASIndex <- merge(Subject, Activity, by = "Index")
+  
+  return (ASIndex)
+}
+
+
+IndexDataMerge <- function(SubjFile,ActFile,DataFile){
+  
+  ##Function to merge Subject Id (1of30) and Activity Id (1of6) with Dataset
+  
+  ## call merged Index Lables for test Dataset
+  Index <- SAIndex(SubjFile, ActFile)
+  
+  ## call Dataset for test
+  Data <- NamingColumns(DataFile)
+  
+  ## introduce an id column to data to merge with indicies by
+  rows <- nrow(Data)
+  Data[,"Index"] <- (1:rows)
+  
+  ## Merge Dataset to Activity and Subject Keys
+  Data <- merge(Index, Data, by = "Index")
+  
+  return(Data)
+}
+
+
+Merge <- function(){
+  
+  ## Merging Subject Id and Activity Key with Corresponding Datasets
+  ## in 'test' and 'train after labeling their Columns
+  
+  testSet <- IndexDataMerge("test/subject_test.txt","test/y_test.txt","test/X_test.txt")
+  
+  trainSet <- IndexDataMerge("train/subject_train.txt","train/y_train.txt","train/X_train.txt")
+  
+  ## Replace Activity numbers with (1 of 6) Descriptive Activity names
+  ActLabels <- read.table("activity_labels.txt")
+  testSet$Activity <- ActLabels[(as.numeric(testSet$Activity)),2]
+  trainSet$Activity <- ActLabels[(as.numeric(trainSet$Activity)),2]
+  
+  ## Merge the two fully labeled and named Datasets into One
+  totData <- rbind(testSet, trainSet)
+  
+  ## Clean totData by removing Index column used for merging
+  totData <- totData[,-1]
+  
+  ## extracting a data frame that only holds means and std deviation for each measure
+  newData <- select(totData,1:8,43:48,83:88,123:128,163:168,203:204,216:217,242:243,255:256,268:273,347:352,426:431,505:506,518:519,531:532,544:545,557:563)
+  
+  
+  return(newData)
+  
+}
+
+NewTidySet <- function(Dataset){
+  
+  ##Getting a new Dataset
+  
+  ## first tidy set by Subject
+  tdy <- data.frame(1:30)
+  
+  ## set matrix of 30 x 73 for mean of 73 variables of 30 subjects
+  
+  tdy$a <- 0; tdy$b <- 0; tdy$c <- 0; tdy$d <- 0; tdy$e <- 0; tdy$f <- 0; tdy$g <- 0;tdy$h <- 0;tdy$i <- 0;tdy$j <- 0;tdy$k <- 0;tdy$l <- 0;tdy$m <- 0;tdy$n <- 0;tdy$o <- 0;tdy$p <- 0;tdy$q <- 0;tdy$r <- 0;tdy$s <- 0;tdy$t <- 0;tdy$u <- 0;tdy$v <- 0;tdy$w <- 0;tdy$x <- 0;tdy$y <- 0;tdy$z <- 0;tdy$b32 <- 0; tdy$c33 <- 0; tdy$d34 <- 0; tdy$e35 <- 0; tdy$f36 <- 0; tdy$g37 <- 0;tdy$h38 <- 0;tdy$i39 <- 0;tdy$j40 <- 0;tdy$k41 <- 0;tdy$l42 <- 0;tdy$m43 <- 0;tdy$n44 <- 0;tdy$o45 <- 0;tdy$p46 <- 0;tdy$q47 <- 0;tdy$r48 <- 0;tdy$s49 <- 0;tdy$t50 <- 0;tdy$u51 <- 0;tdy$v52 <- 0;tdy$w53 <- 0;tdy$x54 <- 0;tdy$y55 <- 0;tdy$z56 <- 0;tdy$aa57 <- 0;tdy$bb58 <- 0;tdy$bc59 <- 0;tdy$bd60 <- 0;tdy$a61 <- 0; tdy$b62 <- 0; tdy$c63 <- 0; tdy$d64 <- 0; tdy$e65 <- 0; tdy$f66 <- 0; tdy$g67 <- 0;tdy$h68 <- 0;tdy$i69 <- 0;tdy$j70 <- 0;tdy$k71 <- 0;tdy$l72 <- 0;tdy$m73 <-0;
+  tdy$iii =0 ;tdy$opp = 0;tdy$az = 0;tdy$oil = 0;
+  
+  
+  ##rename cols
+  tdy <- rename(tdy, Subject =X1.30 )
+  
+  names(tdy) = names(Dataset)
+  
+  for(iter in 2:73){
+    tdy[,iter] <- tapply(Dataset[,iter],Dataset$Subject, mean)
+    
+  }
+  nw <- NTS(Dataset)
+  
+  tidy <- rbind(tdy,nw)  
+  return(tidy)
+}
+
+NTS <- function(Dataset){
+  
+  ##Getting a new Dataset
+  
+  ## first tidy set by Subject
+  tdy <- data.frame(1:6)
+  
+  ## set matrix of 6 x 73 for mean of 73 variables of 6 activities
+  
+  tdy$a <- 0; tdy$b <- 0; tdy$c <- 0; tdy$d <- 0; tdy$e <- 0; tdy$f <- 0; tdy$g <- 0;tdy$h <- 0;tdy$i <- 0;tdy$j <- 0;tdy$k <- 0;tdy$l <- 0;tdy$m <- 0;tdy$n <- 0;tdy$o <- 0;tdy$p <- 0;tdy$q <- 0;tdy$r <- 0;tdy$s <- 0;tdy$t <- 0;tdy$u <- 0;tdy$v <- 0;tdy$w <- 0;tdy$x <- 0;tdy$y <- 0;tdy$z <- 0;tdy$b32 <- 0; tdy$c33 <- 0; tdy$d34 <- 0; tdy$e35 <- 0; tdy$f36 <- 0; tdy$g37 <- 0;tdy$h38 <- 0;tdy$i39 <- 0;tdy$j40 <- 0;tdy$k41 <- 0;tdy$l42 <- 0;tdy$m43 <- 0;tdy$n44 <- 0;tdy$o45 <- 0;tdy$p46 <- 0;tdy$q47 <- 0;tdy$r48 <- 0;tdy$s49 <- 0;tdy$t50 <- 0;tdy$u51 <- 0;tdy$v52 <- 0;tdy$w53 <- 0;tdy$x54 <- 0;tdy$y55 <- 0;tdy$z56 <- 0;tdy$aa57 <- 0;tdy$bb58 <- 0;tdy$bc59 <- 0;tdy$bd60 <- 0;tdy$a61 <- 0; tdy$b62 <- 0; tdy$c63 <- 0; tdy$d64 <- 0; tdy$e65 <- 0; tdy$f66 <- 0; tdy$g67 <- 0;tdy$h68 <- 0;tdy$i69 <- 0;tdy$j70 <- 0;tdy$k71 <- 0;tdy$l72 <- 0;tdy$m73 <-0;
+  tdy$iii =0 ;tdy$opp = 0;tdy$az = 0;tdy$oil = 0;
+  
+  
+  ##rename cols
+  
+  names(tdy) = names(Dataset)
+  
+  for(iter in 2:73){
+    tdy[,iter] <- tapply(Dataset[,iter],Dataset$Activity, mean)
+    
+    
+    
+  }
+  for(i in 1:6){
+    tdy[i,1] = NA
+    tdy[i,2] = i
+  }
+  
+  
+  return(tdy)
+}
